@@ -2,56 +2,50 @@ import customtkinter as ctk
 
 
 class RecommendationPanel(ctk.CTkFrame):
-
     def __init__(self, master):
-        super().__init__(master)
+        super().__init__(master, corner_radius=15)
 
-        self.configure(width=420,height=350)
+        self.grid_columnconfigure(0, weight=1)
 
-        self.title=ctk.CTkLabel(
+        self.title_label = ctk.CTkLabel(
             self,
             text="Recomendación",
-            font=("Arial",22,"bold")
+            font=("Arial", 22, "bold")
         )
+        self.title_label.grid(row=0, column=0, pady=(20, 10), padx=20, sticky="w")
 
-        self.title.pack(pady=(20,15))
-
-        self.status=ctk.CTkLabel(
+        self.status_label = ctk.CTkLabel(
             self,
             text="-",
-            font=("Arial",24,"bold")
+            font=("Arial", 28, "bold")
         )
+        self.status_label.grid(row=1, column=0, pady=10, padx=20)
 
-        self.status.pack(pady=10)
-
-        self.risk=ctk.CTkLabel(
+        self.risk_label = ctk.CTkLabel(
             self,
-            text="Riesgo: -"
+            text="Nivel de riesgo: -",
+            font=("Arial", 16)
         )
+        self.risk_label.grid(row=2, column=0, pady=8, padx=20)
 
-        self.risk.pack()
-
-        self.message=ctk.CTkTextbox(
+        self.message_box = ctk.CTkTextbox(
             self,
-            width=330,
-            height=170
+            width=360,
+            height=170,
+            font=("Arial", 15),
+            wrap="word"
         )
+        self.message_box.grid(row=3, column=0, pady=20, padx=20)
 
-        self.message.pack(pady=20)
+    def update_recommendation(self, recommendation):
+        risk_icon = {
+            "Bajo": "🟢",
+            "Moderado": "🟡",
+            "Alto": "🔴"
+        }.get(recommendation.risk_level, "⚪")
 
-    def update_recommendation(self,recommendation):
+        self.status_label.configure(text=f"{risk_icon} {recommendation.status}")
+        self.risk_label.configure(text=f"Nivel de riesgo: {recommendation.risk_level}")
 
-        self.status.configure(
-            text=recommendation.status
-        )
-
-        self.risk.configure(
-            text=f"Nivel de riesgo: {recommendation.risk_level}"
-        )
-
-        self.message.delete("1.0","end")
-
-        self.message.insert(
-            "1.0",
-            recommendation.message
-        )
+        self.message_box.delete("1.0", "end")
+        self.message_box.insert("1.0", recommendation.message)
