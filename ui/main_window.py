@@ -1,5 +1,11 @@
 import customtkinter as ctk
 
+from database.db import initialize_database
+from database.repository import save_history
+from ui.history_panel import HistoryPanel
+
+from datetime import datetime
+
 from app.config import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
 from app.constants import ACTIVITIES
 from services.weather_api import get_weather
@@ -21,7 +27,8 @@ class WeatherMindApp(ctk.CTk):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
-
+        
+        initialize_database()
         self.create_widgets()
 
     def create_widgets(self):
@@ -82,6 +89,22 @@ class WeatherMindApp(ctk.CTk):
         )
         self.status_label.grid(row=3, column=0, pady=(0, 15))
 
+        self.history_panel=HistoryPanel(self)
+
+        self.history_panel.grid(
+
+            row=4,
+
+            column=0,
+
+            padx=30,
+
+            pady=15,
+
+            sticky="ew"
+
+        )
+
     def search_weather(self):
         city = self.city_entry.get().strip()
         activity = self.activity_combo.get()
@@ -109,3 +132,19 @@ class WeatherMindApp(ctk.CTk):
 
         except Exception as error:
             self.status_label.configure(text=f"No se pudo consultar el clima: {error}")
+
+        save_history(
+
+            datetime.now().strftime("%d/%m/%Y %H:%M"),
+
+            weather.city,
+
+            activity,
+
+            weather,
+
+            recommendation
+
+        )
+
+        self.history_panel.refresh()
