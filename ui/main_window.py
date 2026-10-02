@@ -6,6 +6,8 @@ from ui.history_panel import HistoryPanel
 
 from datetime import datetime
 
+from services.geocoding_api import get_coordinates
+
 from app.config import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
 from app.constants import ACTIVITIES
 from services.weather_api import get_weather
@@ -104,47 +106,74 @@ class WeatherMindApp(ctk.CTk):
             sticky="ew"
 
         )
-
-    def search_weather(self):
-        city = self.city_entry.get().strip()
-        activity = self.activity_combo.get()
-
-        if not city:
-            self.status_label.configure(text="Escribe una ciudad primero.")
-            return
-
-        try:
-            self.status_label.configure(text="Consultando clima...")
+    def _set_status(self, text: str, text_color: str = "#a0a0a0"):
+        """Actualiza el mensaje de estado central de la interfaz."""
+        if hasattr(self, "status_label"):
+            self.status_label.configure(text=text, text_color=text_color)
             self.update_idletasks()
 
-            weather = get_weather(city)
+    def search_weather(self, *args, **kwargs):
+        # 1. Obtención y saneamiento del nombre de la ciudad
+        city_raw = self.city_entry.get() if hasattr(self, "city_entry") else ""
+        if isinstance(city_raw, (list, tuple)):
+            city_raw = str(city_raw[0]) if city_raw else ""
+        city = str(city_raw).strip()
 
-            if weather is None:
-                self.status_label.configure(text="No se encontró la ciudad.")
+        if not city:
+            self._set_status("Por favor, ingrese el nombre de una ciudad.", "#e74c3c")
+            return
+
+        # 2. Bloquear botón y mostrar estado de procesamiento
+        if hasattr(self, "search_button"):
+            self.search_button.configure(state="disabled", text="Buscando...")
+        self._set_status(f"Consultando información para '{city}'...", "#3498db")
+
+        # 3. Obtención de la actividad seleccionada
+        activity = self.activity_combobox.get() if hasattr(self, "activity_combobox") else "Senderismo"
+
+        try:
+            # 4. Geocodificación
+            coords = get_coordinates(city)
+            if not coords:
+                self._set_status(f"No se encontró la ubicación: '{city}'. Verifique la ortografía.", "#e74c3c")
                 return
 
-            recommendation = generate_recommendation(weather, activity)
+            lat, lon = coords[0], coords[1]
+            city_display = str(coords[2]) if len(coords) >= 3 else city
 
-            self.weather_panel.update_weather(weather)
-            self.recommendation_panel.update_recommendation(recommendation)
+            # 5. Obtención de datos meteorológicos
+            weather_data = get_weather(coords)
+            if not weather_data:
+                self._set_status("No se pudieron obtener los datos meteorológicos. Revise su conexión.", "#e74c3c")
+                return
 
-            self.status_label.configure(text="Consulta completada.")
+            weather_data.city = city_display
 
-        except Exception as error:
-            self.status_label.configure(text=f"No se pudo consultar el clima: {error}")
+            # 6. Actualización visual de los paneles principales
+            if hasattr(self, "weather_panel"):
+                self.weather_panel.update_weather(weather_data)
 
-        save_history(
+            # 7. Clasificación de riesgo con modelo ML
+            rec = generate_recommendation(activity, weather_data)
+            if hasattr(self, "recommendation_panel"):
+                self.recommendation_panel.update_recommendation(rec)
 
-            datetime.now().strftime("%d/%m/%Y %H:%M"),
+            # 8. Persistencia transaccional en SQLite
+            from database.repository import save_history
+            from datetime import datetime
 
-            weather.city,
+            current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
+            save_history(current_date, city_display, activity, weather_data, rec)
 
-            activity,
+            # 9. Refresco reactivo del panel de historial
+            if hasattr(self, "history_panel") and hasattr(self.history_panel, "refresh"):
+                self.history_panel.refresh()
 
-            weather,
+            self._set_status(f"Consulta actualizada con éxito para {city_display}.", "#2ecc71")
 
-            recommendation
-
-        )
-
-        self.history_panel.refresh()
+        except Exception as e:
+            self._set_status(f"Error inesperado al consultar: {e}", "#e74c3c")
+        finally:
+            # Restablecer el botón de búsqueda
+            if hasattr(self, "search_button"):
+                self.search_button.configure(state="normal", text="Consultar")

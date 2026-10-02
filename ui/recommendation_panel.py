@@ -1,51 +1,54 @@
 import customtkinter as ctk
 
-
 class RecommendationPanel(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master, corner_radius=15)
-
-        self.grid_columnconfigure(0, weight=1)
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.configure(fg_color="#1e1e1e", corner_radius=12)
 
         self.title_label = ctk.CTkLabel(
             self,
             text="Recomendación",
-            font=("Arial", 22, "bold")
+            font=("Arial", 18, "bold")
         )
-        self.title_label.grid(row=0, column=0, pady=(20, 10), padx=20, sticky="w")
+        self.title_label.pack(pady=(15, 8))
 
-        self.status_label = ctk.CTkLabel(
+        self.risk_badge = ctk.CTkLabel(
             self,
             text="-",
-            font=("Arial", 28, "bold")
+            font=("Arial", 16, "bold"),
+            text_color="#ffffff",
+            fg_color="#333333",
+            corner_radius=8,
+            width=220,
+            height=34
         )
-        self.status_label.grid(row=1, column=0, pady=10, padx=20)
+        self.risk_badge.pack(pady=5)
 
-        self.risk_label = ctk.CTkLabel(
+        self.message_label = ctk.CTkLabel(
             self,
-            text="Nivel de riesgo: -",
-            font=("Arial", 16)
+            text="Listo para consultar.",
+            font=("Arial", 13),
+            text_color="#e0e0e0",
+            wraplength=340,
+            justify="center"
         )
-        self.risk_label.grid(row=2, column=0, pady=8, padx=20)
+        self.message_label.pack(padx=20, pady=(15, 20))
 
-        self.message_box = ctk.CTkTextbox(
-            self,
-            width=360,
-            height=170,
-            font=("Arial", 15),
-            wrap="word"
+    def update_recommendation(self, rec):
+        """Muestra el nivel de riesgo, color y la justificación técnica."""
+        level = getattr(rec, "risk_level", None) or (rec.get("risk_level") if isinstance(rec, dict) else "-")
+        color = getattr(rec, "color", None) or (rec.get("color") if isinstance(rec, dict) else "#333333")
+        
+        # Extrae el mensaje de justificación sin importar el nombre del atributo
+        message = (
+            getattr(rec, "message", None)
+            or getattr(rec, "recommendation", None)
+            or (rec.get("message") if isinstance(rec, dict) else None)
+            or (rec.get("recommendation") if isinstance(rec, dict) else "")
         )
-        self.message_box.grid(row=3, column=0, pady=20, padx=20)
 
-    def update_recommendation(self, recommendation):
-        risk_icon = {
-            "Bajo": "🟢",
-            "Moderado": "🟡",
-            "Alto": "🔴"
-        }.get(recommendation.risk_level, "⚪")
-
-        self.status_label.configure(text=f"{risk_icon} {recommendation.status}")
-        self.risk_label.configure(text=f"Nivel de riesgo: {recommendation.risk_level}")
-
-        self.message_box.delete("1.0", "end")
-        self.message_box.insert("1.0", recommendation.message)
+        self.risk_badge.configure(
+            text=f"Nivel de riesgo: {level}",
+            fg_color=color
+        )
+        self.message_label.configure(text=str(message))
