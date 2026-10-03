@@ -11,7 +11,6 @@ def get_coordinates(city_name):
     if not city_name:
         return None
 
-    # Codificar la ciudad y pedir hasta 5 resultados en español
     encoded_city = urllib.parse.quote(city_name.strip())
     url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_city}&count=5&language=es&format=json"
 
@@ -29,7 +28,6 @@ def get_coordinates(city_name):
         if not results:
             return None
 
-        # Si el usuario es de México o busca ciudades latinas, priorizar match con país
         best_match = results[0]
         for res in results:
             country = res.get("country", "")

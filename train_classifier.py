@@ -15,7 +15,6 @@ DATASET_PATH = os.path.join(BASE_DIR, "dataset_entrenamiento.csv")
 print("[*] Generando dataset meteorológico balanceado...")
 np.random.seed(42)
 
-# Distribuciones realistas de clima templado a cálido
 N = 3000
 temperatures = np.random.normal(loc=22.0, scale=8.0, size=N)
 humidities = np.random.uniform(20, 85, N)
@@ -26,7 +25,6 @@ activities = np.random.choice([0, 1, 2], size=N)
 
 labels = []
 for t, h, w, p, press, act in zip(temperatures, humidities, wind_speeds, precipitations, pressures, activities):
-    # Condición crítica de huracán / tormenta severa
     if press < 995.0 or w > 50.0 or p > 10.0:
         labels.append(2)
     elif act == 0:  # Senderismo

@@ -39,7 +39,6 @@ class RecommendationPanel(ctk.CTkFrame):
         level = getattr(rec, "risk_level", None) or (rec.get("risk_level") if isinstance(rec, dict) else "-")
         color = getattr(rec, "color", None) or (rec.get("color") if isinstance(rec, dict) else "#333333")
         
-        # Extrae el mensaje de justificación sin importar el nombre del atributo
         message = (
             getattr(rec, "message", None)
             or getattr(rec, "recommendation", None)

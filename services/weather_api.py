@@ -8,7 +8,6 @@ def get_weather(*args, **kwargs):
     con todos los atributos requeridos por el modelo.
     """
     try:
-        # 1. Resolver latitud y longitud
         if len(args) == 1:
             first = args[0]
             if isinstance(first, (tuple, list)):
@@ -22,7 +21,6 @@ def get_weather(*args, **kwargs):
             lat = float(kwargs.get("lat", kwargs.get("latitude", 0.0)))
             lon = float(kwargs.get("lon", kwargs.get("longitude", 0.0)))
 
-        # 2. Solicitar variables actuales a Open-Meteo
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={lat}&longitude={lon}&current="
@@ -45,12 +43,10 @@ def get_weather(*args, **kwargs):
         code = int(current.get("weather_code", 0))
         uv = float(current.get("uv_index", 5.0))
 
-        # Probabilidad de precipitación tomada de la primera hora disponible
         hourly = data.get("hourly", {})
         prob_list = hourly.get("precipitation_probability", [0])
         precip_prob = float(prob_list[0]) if prob_list else 0.0
 
-        # Traducir código meteorológico a texto legible
         condition_desc = "Despejado"
         if code in [1, 2, 3]:
             condition_desc = "Parcialmente nublado"
@@ -61,7 +57,6 @@ def get_weather(*args, **kwargs):
         elif code >= 95:
             condition_desc = "Tormenta eléctrica"
 
-        # 3. Instanciar WeatherData soportando kwargs o argumentos posicionales
         try:
             return WeatherData(
                 city="",
@@ -75,7 +70,7 @@ def get_weather(*args, **kwargs):
                 precipitation_probability=precip_prob
             )
         except TypeError:
-            # Respaldo posicional según el orden habitual de la dataclass
+
             try:
                 return WeatherData(
                     city="",

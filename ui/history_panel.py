@@ -57,8 +57,6 @@ class HistoryPanel(ctk.CTkFrame):
 🌡 {row[3]}°C
 
 ⚠ Riesgo {row[4]}
-
 ------------------------------------
-
 """
             )

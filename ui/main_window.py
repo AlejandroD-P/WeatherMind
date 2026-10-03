@@ -113,7 +113,6 @@ class WeatherMindApp(ctk.CTk):
             self.update_idletasks()
 
     def search_weather(self, *args, **kwargs):
-        # 1. Obtención y saneamiento del nombre de la ciudad
         city_raw = self.city_entry.get() if hasattr(self, "city_entry") else ""
         if isinstance(city_raw, (list, tuple)):
             city_raw = str(city_raw[0]) if city_raw else ""
@@ -123,16 +122,13 @@ class WeatherMindApp(ctk.CTk):
             self._set_status("Por favor, ingrese el nombre de una ciudad.", "#e74c3c")
             return
 
-        # 2. Bloquear botón y mostrar estado de procesamiento
         if hasattr(self, "search_button"):
             self.search_button.configure(state="disabled", text="Buscando...")
         self._set_status(f"Consultando información para '{city}'...", "#3498db")
 
-        # 3. Obtención de la actividad seleccionada
         activity = self.activity_combobox.get() if hasattr(self, "activity_combobox") else "Senderismo"
 
         try:
-            # 4. Geocodificación
             coords = get_coordinates(city)
             if not coords:
                 self._set_status(f"No se encontró la ubicación: '{city}'. Verifique la ortografía.", "#e74c3c")
@@ -141,7 +137,6 @@ class WeatherMindApp(ctk.CTk):
             lat, lon = coords[0], coords[1]
             city_display = str(coords[2]) if len(coords) >= 3 else city
 
-            # 5. Obtención de datos meteorológicos
             weather_data = get_weather(coords)
             if not weather_data:
                 self._set_status("No se pudieron obtener los datos meteorológicos. Revise su conexión.", "#e74c3c")
@@ -149,23 +144,19 @@ class WeatherMindApp(ctk.CTk):
 
             weather_data.city = city_display
 
-            # 6. Actualización visual de los paneles principales
             if hasattr(self, "weather_panel"):
                 self.weather_panel.update_weather(weather_data)
 
-            # 7. Clasificación de riesgo con modelo ML
             rec = generate_recommendation(activity, weather_data)
             if hasattr(self, "recommendation_panel"):
                 self.recommendation_panel.update_recommendation(rec)
 
-            # 8. Persistencia transaccional en SQLite
             from database.repository import save_history
             from datetime import datetime
 
             current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
             save_history(current_date, city_display, activity, weather_data, rec)
 
-            # 9. Refresco reactivo del panel de historial
             if hasattr(self, "history_panel") and hasattr(self.history_panel, "refresh"):
                 self.history_panel.refresh()
 
@@ -174,6 +165,5 @@ class WeatherMindApp(ctk.CTk):
         except Exception as e:
             self._set_status(f"Error inesperado al consultar: {e}", "#e74c3c")
         finally:
-            # Restablecer el botón de búsqueda
             if hasattr(self, "search_button"):
                 self.search_button.configure(state="normal", text="Consultar")

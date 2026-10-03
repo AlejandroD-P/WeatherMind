@@ -3,7 +3,6 @@ import os
 import sys
 import inspect
 
-# Asegurar que los módulos del proyecto sean importables desde la raíz
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from services.geocoding_api import get_coordinates
@@ -85,15 +84,12 @@ class TestWeatherMindPipeline(unittest.TestCase):
             message="Condiciones óptimas."
         )
 
-        # Guardar en base de datos
         save_history(fecha_test, ciudad_test, actividad_test, dummy_weather, dummy_rec)
 
-        # Recuperar historial
         historial = get_last_history()
         self.assertIsInstance(historial, list, "El historial debe retornar una lista de registros")
         self.assertGreater(len(historial), 0, "Debe existir al menos un registro en la BD")
 
-        # Verificar que el registro más reciente coincida
         ultimo = historial[0]
         self.assertIn(ciudad_test, str(ultimo[1]))
         self.assertEqual(str(ultimo[2]), actividad_test)
