@@ -1,24 +1,23 @@
-# WeatherMind 🌤️🤖
+# WeatherMind
 
-**WeatherMind** es una aplicación de escritorio desarrollada en Python que combina el consumo en tiempo real de APIs meteorológicas abiertas con un modelo predictivo de aprendizaje automático (*Machine Learning*) para evaluar condiciones climáticas y generar recomendaciones contextuales de riesgo según la actividad seleccionada.
+**WeatherMind** es una aplicación de escritorio desarrollada en Python que combina el consumo en tiempo real de APIs meteorológicas abiertas con un modelo predictivo de aprendizaje automático para evaluar condiciones climáticas y generar recomendaciones contextuales de riesgo según la actividad seleccionada.
 
----
 
-## 🛠️ Arquitectura y Tecnologías
+# Arquitectura y Tecnologías
 
-- **Interfaz de Usuario (UI)**: [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (diseño moderno con soporte de modo oscuro).
+- **Interfaz de Usuario (UI)**: [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) 
 - **Servicios Externos**: 
-  - *Open-Meteo Geocoding API* (geolocalización con resolución priorizada para México y Latinoamérica).
-  - *Open-Meteo Forecast API* (temperatura, precipitación, viento, humedad, UV, presión atmosférica).
+  - *Open-Meteo Geocoding API* 
+  - *Open-Meteo Forecast API* 
 - **Motor Predictivo de IA**: 
   - `Scikit-Learn` (`RandomForestClassifier`) serializado con `joblib`.
   - Clasificación de nivel de riesgo (`Bajo`, `Moderado`, `Alto`) y generación de justificaciones explicativas contextuales.
-- **Persistencia**: `SQLite3` (almacenamiento transaccional local del historial de consultas).
+- **Persistencia**: `SQLite3` 
 - **Pruebas Automatizadas**: `unittest`.
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
 WeatherMind/
