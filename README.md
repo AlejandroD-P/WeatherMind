@@ -5,7 +5,7 @@
 
 # Arquitectura y Tecnologías
 
-- **Interfaz de Usuario (UI)**: [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) 
+- **Interfaz de Usuario (UI)**:
 - **Servicios Externos**: 
   - *Open-Meteo Geocoding API* 
   - *Open-Meteo Forecast API* 
