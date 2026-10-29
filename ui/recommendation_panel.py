@@ -3,51 +3,49 @@ import customtkinter as ctk
 class RecommendationPanel(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color="#1e1e1e", corner_radius=12)
 
-        self.title_label = ctk.CTkLabel(
-            self,
-            text="Recomendación",
-            font=("Arial", 18, "bold")
-        )
-        self.title_label.pack(pady=(15, 8))
+        # Título del panel
+        self.title_label = ctk.CTkLabel(self, text="Recomendación", font=("Roboto", 18, "bold"))
+        self.title_label.pack(pady=(15, 5))
 
-        self.risk_badge = ctk.CTkLabel(
-            self,
-            text="-",
-            font=("Arial", 16, "bold"),
-            text_color="#ffffff",
-            fg_color="#333333",
-            corner_radius=8,
-            width=220,
-            height=34
-        )
-        self.risk_badge.pack(pady=5)
+        # Indicador de Nivel de Confianza
+        self.confidence_label = ctk.CTkLabel(self, text="Nivel de Confianza: 0%", font=("Roboto", 12))
+        self.confidence_label.pack(pady=(5, 0))
 
-        self.message_label = ctk.CTkLabel(
-            self,
-            text="Listo para consultar.",
-            font=("Arial", 13),
-            text_color="#e0e0e0",
-            wraplength=340,
-            justify="center"
-        )
-        self.message_label.pack(padx=20, pady=(15, 20))
+        self.confidence_bar = ctk.CTkProgressBar(self, width=250, progress_color="#2FA572")
+        self.confidence_bar.set(0) # Inicializa en 0 (rango de 0.0 a 1.0)
+        self.confidence_bar.pack(pady=(5, 10))
 
-    def update_recommendation(self, rec):
-        """Muestra el nivel de riesgo, color y la justificación técnica."""
-        level = getattr(rec, "risk_level", None) or (rec.get("risk_level") if isinstance(rec, dict) else "-")
-        color = getattr(rec, "color", None) or (rec.get("color") if isinstance(rec, dict) else "#333333")
-        
-        message = (
-            getattr(rec, "message", None)
-            or getattr(rec, "recommendation", None)
-            or (rec.get("message") if isinstance(rec, dict) else None)
-            or (rec.get("recommendation") if isinstance(rec, dict) else "")
-        )
+        # Cuadro de texto para la explicación de la IA
+        self.explanation_box = ctk.CTkTextbox(self, height=100, wrap="word", font=("Arial", 15))
+        self.explanation_box.pack(fill="both", expand=True, padx=20, pady=(10, 20))
+        self.explanation_box.insert("0.0", "Esperando datos del pronóstico...")
+        self.explanation_box.configure(state="disabled") # Bloqueado para solo lectura
 
-        self.risk_badge.configure(
-            text=f"Nivel de riesgo: {level}",
-            fg_color=color
-        )
-        self.message_label.configure(text=str(message))
+    def update_recommendation(self, confidence_score, explanation_text, risk_level="Bajo"):
+            # Actualizar barra y porcentaje (asumiendo confidence_score de 0.0 a 1.0)
+            percentage = int(confidence_score * 100)
+            self.confidence_label.configure(text=f"Nivel de Confianza: {percentage}%")
+            self.confidence_bar.set(confidence_score)
+
+            # Cambiar color según riesgo de la barra
+            if confidence_score > 0.7:
+                self.confidence_bar.configure(progress_color="#2FA572") # Verde
+            elif confidence_score > 0.4:
+                self.confidence_bar.configure(progress_color="#F39C12") # Amarillo
+            else:
+                self.confidence_bar.configure(progress_color="#E74C3C") # Rojo
+
+            # Colores tenues para el fondo de la caja de texto
+            bg_colors = {
+                "Bajo": "#1a3b2b",      # Verde oscuro
+                "Moderado": "#423118",  # Café/Naranja oscuro
+                "Alto": "#3b1a1a"       # Rojo oscuro
+            }
+            color_fondo = bg_colors.get(risk_level, "transparent")
+
+            # Actualizar texto explicativo con el nuevo fondo
+            self.explanation_box.configure(state="normal", fg_color=color_fondo)
+            self.explanation_box.delete("1.0", "end")
+            self.explanation_box.insert("1.0", explanation_text)
+            self.explanation_box.configure(state="disabled")

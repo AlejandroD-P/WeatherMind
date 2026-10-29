@@ -1,19 +1,19 @@
 import customtkinter as ctk
-
-from database.db import initialize_database
-from database.repository import save_history
-from ui.history_panel import HistoryPanel
-
+import threading 
 from datetime import datetime
-
-from services.geocoding_api import get_coordinates
 
 from app.config import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
 from app.constants import ACTIVITIES
+from database.db import initialize_database
+from database.repository import save_history
+from services.geocoding_api import get_coordinates
 from services.weather_api import get_weather
 from logic.recommendation_engine import generate_recommendation
+
 from ui.weather_panel import WeatherPanel
 from ui.recommendation_panel import RecommendationPanel
+from ui.history_panel import HistoryPanel
+from ui.forecast_panel import ForecastPanel
 
 
 class WeatherMindApp(ctk.CTk):
@@ -26,88 +26,72 @@ class WeatherMindApp(ctk.CTk):
         self.title(APP_NAME)
         self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.minsize(WINDOW_WIDTH, WINDOW_HEIGHT)
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
         
         initialize_database()
         self.create_widgets()
 
     def create_widgets(self):
-        self.header_label = ctk.CTkLabel(
-            self,
-            text="WeatherMind",
-            font=("Arial", 34, "bold")
-        )
-        self.header_label.grid(row=0, column=0, pady=(25, 10))
+            # 1. Configuración principal de proporciones (1/3 Izquierda, 2/3 Derecha)
+            self.grid_columnconfigure(0, weight=1, uniform="columna")
+            self.grid_columnconfigure(1, weight=2, uniform="columna")
+            self.grid_rowconfigure(1, weight=1) # Fila expansible para los contenedores
 
-        self.search_frame = ctk.CTkFrame(self, corner_radius=15)
-        self.search_frame.grid(row=1, column=0, padx=30, pady=10, sticky="ew")
+            # --- ENCABEZADO ---
+            self.header_label = ctk.CTkLabel(self, text="WeatherMind", font=("Arial", 34, "bold"))
+            self.header_label.grid(row=0, column=0, columnspan=2, pady=(25, 10))
 
-        self.search_frame.grid_columnconfigure(0, weight=1)
-        self.search_frame.grid_columnconfigure(1, weight=1)
-        self.search_frame.grid_columnconfigure(2, weight=0)
+            # --- CONTENEDORES MAESTROS ---
+            # Lado Izquierdo
+            self.left_frame = ctk.CTkFrame(self, fg_color="transparent")
+            self.left_frame.grid(row=1, column=0, sticky="nsew", padx=(30, 15), pady=0)
+            self.left_frame.grid_columnconfigure(0, weight=1)
+            self.left_frame.grid_rowconfigure(0, weight=3) # Clima ocupa más alto
+            self.left_frame.grid_rowconfigure(1, weight=2) # Historial
 
-        self.city_entry = ctk.CTkEntry(
-            self.search_frame,
-            placeholder_text="Escribe una ciudad",
-            height=38
-        )
-        self.city_entry.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
+            # Lado Derecho
+            self.right_frame = ctk.CTkFrame(self, fg_color="transparent")
+            self.right_frame.grid(row=1, column=1, sticky="nsew", padx=(15, 30), pady=0)
+            self.right_frame.grid_columnconfigure(0, weight=1)
+            self.right_frame.grid_rowconfigure(0, weight=0) # Búsqueda (altura fija)
+            self.right_frame.grid_rowconfigure(1, weight=1) # Recomendación
+            self.right_frame.grid_rowconfigure(2, weight=1) # Pronóstico
 
-        self.activity_combo = ctk.CTkComboBox(
-            self.search_frame,
-            values=ACTIVITIES,
-            height=38
-        )
-        self.activity_combo.set("Senderismo")
-        self.activity_combo.grid(row=0, column=1, padx=15, pady=15, sticky="ew")
+            # --- ELEMENTOS LADO IZQUIERDO ---
+            self.weather_panel = WeatherPanel(self.left_frame)
+            self.weather_panel.grid(row=0, column=0, pady=(10, 7), sticky="nsew")
 
-        self.search_button = ctk.CTkButton(
-            self.search_frame,
-            text="Consultar",
-            height=38,
-            command=self.search_weather
-        )
-        self.search_button.grid(row=0, column=2, padx=15, pady=15)
+            self.history_panel = HistoryPanel(self.left_frame)
+            self.history_panel.grid(row=1, column=0, pady=(7, 0), sticky="nsew")
 
-        self.dashboard_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.dashboard_frame.grid(row=2, column=0, padx=30, pady=20, sticky="nsew")
+            # --- ELEMENTOS LADO DERECHO ---
+            self.search_frame = ctk.CTkFrame(self.right_frame, corner_radius=15)
+            self.search_frame.grid(row=0, column=0, pady=(10, 7), sticky="ew")
 
-        self.dashboard_frame.grid_columnconfigure(0, weight=1)
-        self.dashboard_frame.grid_columnconfigure(1, weight=1)
-        self.dashboard_frame.grid_rowconfigure(0, weight=1)
+            self.search_frame.grid_columnconfigure(0, weight=1)
+            self.search_frame.grid_columnconfigure(1, weight=1)
+            self.search_frame.grid_columnconfigure(2, weight=0)
 
-        self.weather_panel = WeatherPanel(self.dashboard_frame)
-        self.weather_panel.grid(row=0, column=0, padx=(0, 15), pady=10, sticky="nsew")
+            self.city_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Escribe una ciudad", height=38)
+            self.city_entry.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
 
-        self.recommendation_panel = RecommendationPanel(self.dashboard_frame)
-        self.recommendation_panel.grid(row=0, column=1, padx=(15, 0), pady=10, sticky="nsew")
+            self.activity_combo = ctk.CTkComboBox(self.search_frame, values=ACTIVITIES, height=38)
+            self.activity_combo.set("Senderismo")
+            self.activity_combo.grid(row=0, column=1, padx=15, pady=15, sticky="ew")
 
-        self.status_label = ctk.CTkLabel(
-            self,
-            text="Listo para consultar.",
-            font=("Arial", 13)
-        )
-        self.status_label.grid(row=3, column=0, pady=(0, 15))
+            self.search_button = ctk.CTkButton(self.search_frame, text="Consultar", height=38, command=self.search_weather)
+            self.search_button.grid(row=0, column=2, padx=15, pady=15)
 
-        self.history_panel=HistoryPanel(self)
+            self.recommendation_panel = RecommendationPanel(self.right_frame)
+            self.recommendation_panel.grid(row=1, column=0, pady=(7, 7), sticky="nsew")
 
-        self.history_panel.grid(
+            self.forecast_panel = ForecastPanel(self.right_frame)
+            self.forecast_panel.grid(row=2, column=0, pady=(7, 0), sticky="nsew")
 
-            row=4,
+            # --- ESTADO INFERIOR ---
+            self.status_label = ctk.CTkLabel(self, text="Listo para consultar.", font=("Arial", 13))
+            self.status_label.grid(row=2, column=0, columnspan=2, pady=(15, 15))
 
-            column=0,
-
-            padx=30,
-
-            pady=15,
-
-            sticky="ew"
-
-        )
     def _set_status(self, text: str, text_color: str = "#a0a0a0"):
-        """Actualiza el mensaje de estado central de la interfaz."""
         if hasattr(self, "status_label"):
             self.status_label.configure(text=text, text_color=text_color)
             self.update_idletasks()
@@ -126,8 +110,12 @@ class WeatherMindApp(ctk.CTk):
             self.search_button.configure(state="disabled", text="Buscando...")
         self._set_status(f"Consultando información para '{city}'...", "#3498db")
 
-        activity = self.activity_combobox.get() if hasattr(self, "activity_combobox") else "Senderismo"
+        activity = self.activity_combo.get() if hasattr(self, "activity_combo") else "Senderismo"
 
+        hilo_consulta = threading.Thread(target=self._realizar_consulta, args=(city, activity))
+        hilo_consulta.start()
+
+    def _realizar_consulta(self, city, activity):
         try:
             coords = get_coordinates(city)
             if not coords:
@@ -148,11 +136,12 @@ class WeatherMindApp(ctk.CTk):
                 self.weather_panel.update_weather(weather_data)
 
             rec = generate_recommendation(activity, weather_data)
+            
             if hasattr(self, "recommendation_panel"):
-                self.recommendation_panel.update_recommendation(rec)
+                self.recommendation_panel.update_recommendation(rec.confidence, rec.message, rec.risk_level)
 
-            from database.repository import save_history
-            from datetime import datetime
+            if hasattr(self, "forecast_panel") and hasattr(weather_data, "daily_forecast"):
+                self.forecast_panel.update_forecast(weather_data.daily_forecast, getattr(rec, "best_day", ""))
 
             current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
             save_history(current_date, city_display, activity, weather_data, rec)
@@ -164,6 +153,7 @@ class WeatherMindApp(ctk.CTk):
 
         except Exception as e:
             self._set_status(f"Error inesperado al consultar: {e}", "#e74c3c")
+        
         finally:
             if hasattr(self, "search_button"):
                 self.search_button.configure(state="normal", text="Consultar")
