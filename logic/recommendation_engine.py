@@ -1,9 +1,14 @@
 import os
+import sys 
 import joblib
 import pandas as pd
 from models.recommendation import Recommendation
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 MODEL_PATH = os.path.join(BASE_DIR, "models", "activity_classifier.joblib")
 
 ACTIVITY_MAP = {
@@ -104,6 +109,10 @@ def generate_recommendation(activity_name: str, weather_data):
 
 #  CÁLCULO DE HORARIO Y DÍA ÓPTIMO
     optimal_msg = ""
+    optimal_msg = ""
+    best_hour = None
+    best_day = None
+    
     if _model is not None:
         cols = ["temperature", "humidity", "wind_speed", "precipitation", "pressure", "activity"]
         
